@@ -22,6 +22,7 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.util.Config;
 import io.kubernetes.client.util.Watch;
+import io.sundr.shaded.org.apache.velocity.app.event.ReferenceInsertionEventHandler.referenceInsertExecutor;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -93,6 +94,12 @@ public class KubernetesListener {
         }
     }
 
+    private void safelyAddServer(ServerInfo server) {
+        Optional<RegisteredServer> registeredServer = this.proxyServer.getServer(server.getName());
+        if (registeredServer.isPresent()) this.proxyServer.unregisterServer(registeredServer.get().getServerInfo());
+        this.proxyServer.registerServer(server);
+    }
+
     private void addServer(String event, V1Service service) {
         Map<String, String> annotations = service.getMetadata().getAnnotations();
         if (annotations != null) {
@@ -114,18 +121,14 @@ public class KubernetesListener {
                 final ServerInfo server = new ServerInfo(name, address);
 
                 if (defaultServer) {
-                    if (this.proxyServer.getServer(defaultName).isPresent()) {
-                        this.proxyServer.unregisterServer(this.proxyServer.getServer(defaultName).get().getServerInfo());
-                    }
-                    
-                    this.proxyServer.registerServer(new ServerInfo(defaultName, address));
+                    this.safelyAddServer(new ServerInfo(defaultName, address));
                 }
 
                 if (externalHost != null) {
                    config.addForcedHost(externalHost, name);
                 }
 
-                this.proxyServer.registerServer(server);
+                this.safelyAddServer(server);
                 logger.info(String.format(
                     "Event: %s Service: %s ExternalHost: %s Default: %b ProxyDNS: %s",
                     event,
@@ -155,7 +158,7 @@ public class KubernetesListener {
         if (registeredServer.isPresent()) {
             this.proxyServer.unregisterServer(registeredServer.get().getServerInfo());
         }
-         
+
         logger.info(String.format(
             "Event: REMOVED Service: %s ExternalHost: %s Default: %b",
             name,
