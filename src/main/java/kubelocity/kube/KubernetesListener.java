@@ -25,6 +25,7 @@ import io.kubernetes.client.util.Watch;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
+import java.util.Optional;
 
 public class KubernetesListener {
     private ProxyServer proxyServer;
@@ -150,7 +151,11 @@ public class KubernetesListener {
         }
 
 
-        this.proxyServer.unregisterServer(this.proxyServer.getServer(name).get().getServerInfo());
+        Optional<RegisteredServer> registeredServer = this.proxyServer.getServer(name);
+        if (registeredServer.isPresent()) {
+            this.proxyServer.unregisterServer(registeredServer.get().getServerInfo());
+        }
+         
         logger.info(String.format(
             "Event: REMOVED Service: %s ExternalHost: %s Default: %b",
             name,
