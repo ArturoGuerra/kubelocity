@@ -19,13 +19,18 @@ repositories {
         name 'velocity'
         url 'https://repo.velocitypowered.com/snapshots/'
     }
+    maven {
+        name = 'sponge'
+        url = 'https://repo.spongepowered.org/maven'
+    }
 }
 
 dependencies {
+    compile 'org.spongepowered:configurate-hocon:3.6'
     compile 'io.kubernetes:client-java:5.0.0'
     annotationProcessor 'io.kubernetes:client-java:5.0.0'
-    compile 'com.velocitypowered:velocity-api:1.0.0-SNAPSHOT'
-    annotationProcessor 'com.velocitypowered:velocity-api:1.0.0-SNAPSHOT'
+    compile 'com.velocitypowered:velocity-api:1.1.0-SNAPSHOT'
+    annotationProcessor 'com.velocitypowered:velocity-api:1.1.0-SNAPSHOT'
     // This dependency is exported to consumers, that is to say found on their compile classpath.
     api 'org.apache.commons:commons-math3:3.6.1'
 
@@ -35,6 +40,7 @@ dependencies {
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
 }
+
 
 jar {
     from (configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }) {

@@ -8,6 +8,7 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.server.RegisteredServer;
 
 import io.kubernetes.client.ApiException;
 import kubelocity.kube.KubernetesListener;
@@ -31,10 +32,20 @@ public class Kubelocity {
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
+        if (!this.config.keepPreRegistered) {
+            removePreRegistered();
+        }
+        
         connectionManager();
         kubernetesListener();
     }
 
+    private void removePreRegistered() {
+        this.logger.info("Removing Pre-Registered servers");
+        for (RegisteredServer s : this.proxyServer.getAllServers()) {
+            this.proxyServer.unregisterServer(s.getServerInfo());
+        }
+    }
 
     private void connectionManager() {
         proxyServer.getEventManager().register(this, new ConnectionManager(this.config, this.proxyServer, this.logger));

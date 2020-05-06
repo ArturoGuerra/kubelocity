@@ -9,6 +9,7 @@ public class Config {
     private HashMap<String, String> forcedHosts;
     private String defaultServer;
     private String namespace;
+    public  Boolean keepPreRegistered;
 
     // Loads Config from environmental variables
     public Config() {
@@ -16,8 +17,10 @@ public class Config {
         this.admins = (System.getenv("ADMINS") != null) ? System.getenv("ADMINS").split(",") : new String[]{};
         this.motd = (System.getenv("MOTD") != null) ? System.getenv("MOTD") : "Welcome to northern uwu";
         this.namespace = (System.getenv("KUBE_NAMESPACE") != null) ? System.getenv("KUBE_NAMESPACE") : "minecraft";
-        this.defaultServer = (System.getenv("DEFAULT_LOBBY") != null) ? System.getenv("DEFAULT_LOBBY") : "lobby";
+        this.defaultServer = null;
         this.admins = new String[]{};
+
+        this.keepPreRegistered = (System.getenv("KEEP_PREREGISTERED") != null) ? System.getenv("KEEP_PREREGISTERED").contentEquals("true") : false;
     }
 
     public String getMotd() {
@@ -30,6 +33,10 @@ public class Config {
 
     public String getDefaultServer() {
         return this.defaultServer;
+    }
+
+    public void setDefaultServer(String server) {
+        this.defaultServer = server;
     }
 
     public String getNamespace() {

@@ -36,7 +36,6 @@ public class KubernetesListener {
     private ApiClient kclient;
     private Watch<V1Service> watch;
     final private String namespace;
-    final private String defaultName;
     private ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public KubernetesListener(kubelocity.config.Config config, ProxyServer proxyServer, Logger logger) throws IOException, ApiException {
@@ -44,7 +43,6 @@ public class KubernetesListener {
         this.config = config;
         this.logger = logger;
         this.namespace = config.getNamespace();
-        this.defaultName = config.getDefaultServer();
  
         this.kclient = (System.getenv("KUBEFILE") != null) ? Config.fromConfig(System.getenv("KUBEFILE")) : Config.fromCluster();
         OkHttpClient httpClient = this.kclient.getHttpClient();
@@ -119,16 +117,16 @@ public class KubernetesListener {
 
                 final InetSocketAddress address = new InetSocketAddress(proxyDNS, port);
                 final ServerInfo server = new ServerInfo(name, address);
+                this.safelyAddServer(server);
 
                 if (defaultServer) {
-                    this.safelyAddServer(new ServerInfo(defaultName, address));
+                    config.setDefaultServer(name);
                 }
 
                 if (externalHost != null) {
                    config.addForcedHost(externalHost, name);
                 }
 
-                this.safelyAddServer(server);
                 logger.info(String.format(
                     "Event: %s Service: %s ExternalHost: %s Default: %b ProxyDNS: %s",
                     event,
