@@ -11,7 +11,6 @@ import com.google.common.reflect.TypeToken;
 import com.squareup.okhttp.OkHttpClient;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
-//import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerInfo;
 
 import io.kubernetes.client.ApiClient;
@@ -22,7 +21,6 @@ import io.kubernetes.client.models.V1Service;
 import io.kubernetes.client.models.V1ServicePort;
 import io.kubernetes.client.util.Config;
 import io.kubernetes.client.util.Watch;
-import io.sundr.shaded.org.apache.velocity.app.event.ReferenceInsertionEventHandler.referenceInsertExecutor;
 
 import java.net.InetSocketAddress;
 import java.util.Map;
