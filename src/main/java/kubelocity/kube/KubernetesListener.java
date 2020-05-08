@@ -104,7 +104,7 @@ public class KubernetesListener {
                 final String externalHost = annotations.get("io.ar2ro.kubefall/host");
                 final String name = service.getMetadata().getName();
                 final String serviceNamespace = service.getMetadata().getNamespace();
-                final String proxyDNS = String.format("%s.%s.svc.cluster.local", name, serviceNamespace);
+                final String proxyDNS = String.format("%s.%s", name, serviceNamespace);
                 final Boolean defaultServer = (annotations.get("io.ar2ro.kubefall/defaultServer") != null) ? annotations.get("io.ar2ro.kubefall/defaultServer").contentEquals("true") : false;
                 
                 for (V1ServicePort servicePort : service.getSpec().getPorts()) {
