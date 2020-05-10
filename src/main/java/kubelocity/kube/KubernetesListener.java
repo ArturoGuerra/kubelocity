@@ -71,7 +71,7 @@ public class KubernetesListener {
                         case "MODIFIED":
                             addServer(service.type, service.object);
                             break;
-                        case "REMOVED":
+                        case "DELETED":
                             removeServer(service.object);
                             break;
                         default:
@@ -99,13 +99,13 @@ public class KubernetesListener {
     private void addServer(String event, V1Service service) {
         Map<String, String> annotations = service.getMetadata().getAnnotations();
         if (annotations != null) {
-            if ((annotations.get("io.ar2ro.kubefall/enabled") != null) ? annotations.get("io.ar2ro.kubefall/enabled").contentEquals("true") : false) {
+            if ((annotations.get("io.ar2ro.kubelocity/enabled") != null) ? annotations.get("io.ar2ro.kubelocity/enabled").contentEquals("true") : false) {
                 Integer port = 25565;
-                final String externalHost = annotations.get("io.ar2ro.kubefall/host");
+                final String externalHost = annotations.get("io.ar2ro.kubelocity/host");
                 final String name = service.getMetadata().getName();
                 final String serviceNamespace = service.getMetadata().getNamespace();
                 final String proxyDNS = String.format("%s.%s", name, serviceNamespace);
-                final Boolean defaultServer = (annotations.get("io.ar2ro.kubefall/defaultServer") != null) ? annotations.get("io.ar2ro.kubefall/defaultServer").contentEquals("true") : false;
+                final Boolean defaultServer = (annotations.get("io.ar2ro.kubelocity/defaultServer") != null) ? annotations.get("io.ar2ro.kubelocity/defaultServer").contentEquals("true") : false;
                 
                 for (V1ServicePort servicePort : service.getSpec().getPorts()) {
                     if (servicePort.getName() == "minecraft") {
@@ -144,8 +144,8 @@ public class KubernetesListener {
         Boolean defaultServer = false;
 
         if (annotations != null) {
-            defaultServer = (annotations.get("io.ar2ro.kubafall/defaultServer") != null) ? annotations.get("io.ar2ro.kubefall/defaultServer").contentEquals("true") : false;
-            externalHost = annotations.get("io.ar2ro.kubefall/host");
+            defaultServer = (annotations.get("io.ar2ro.kubalocity/defaultServer") != null) ? annotations.get("io.ar2ro.kubelocity/defaultServer").contentEquals("true") : false;
+            externalHost = annotations.get("io.ar2ro.kubelocity/host");
             if (externalHost != null) config.removeForcedHost(externalHost);
         }
 
@@ -156,7 +156,7 @@ public class KubernetesListener {
         }
 
         logger.info(String.format(
-            "Event: REMOVED Service: %s ExternalHost: %s Default: %b",
+            "Event: DELETED Service: %s ExternalHost: %s Default: %b",
             name,
             externalHost != null ? externalHost : "",
             defaultServer
