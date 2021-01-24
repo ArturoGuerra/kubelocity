@@ -9,18 +9,15 @@ public class Config {
     private HashMap<String, String> forcedHosts;
     private String defaultServer;
     private String namespace;
-    public  Boolean keepPreRegistered;
 
     // Loads Config from environmental variables
     public Config() {
-        this.forcedHosts = new HashMap<String, String>();
+        this.forcedHosts = new HashMap<>();
         this.admins = (System.getenv("ADMINS") != null) ? System.getenv("ADMINS").split(",") : new String[]{};
-        this.motd = (System.getenv("MOTD") != null) ? System.getenv("MOTD") : "Welcome to northern uwu";
+        this.motd = (System.getenv("MOTD") != null) ? System.getenv("MOTD") : "Velocity powered by Kubernetes";
         this.namespace = (System.getenv("KUBE_NAMESPACE") != null) ? System.getenv("KUBE_NAMESPACE") : "minecraft";
         this.defaultServer = null;
         this.admins = new String[]{};
-
-        this.keepPreRegistered = (System.getenv("KEEP_PREREGISTERED") != null) ? System.getenv("KEEP_PREREGISTERED").contentEquals("true") : false;
     }
 
     public String getMotd() {
