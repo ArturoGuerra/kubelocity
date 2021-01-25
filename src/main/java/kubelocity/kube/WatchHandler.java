@@ -18,30 +18,32 @@ public class WatchHandler implements Runnable {
 
     @Override
     public void run() {
-        try {
-            for (Watch.Response<V1Service> service : watch) {
-                ServerOptions options = new ServerOptions(service.object);
-                switch(service.type) {
-                    case "ADDED":
-                    case "MODIFIED":
-                        listener.addServer(service.type, options);
-                        break;
-                    case "DELETED":
-                        listener.removeServer(options);
-                        break;
-                    default:
-                        logger.info(String.format("Action: %s%n", service.type));
-                        break;
-                }
-            }
-        } finally {
+        while (true) {
             try {
-                watch.close();
-            } catch (IOException e) {
-                logger.info(e.getMessage());
-            }
-        }        
-
-        logger.info("Exiting watch thread...");
+                for (Watch.Response<V1Service> service : watch) {
+                    ServerOptions options = new ServerOptions(service.object);
+                    switch(service.type) {
+                        case "ADDED":
+                        case "MODIFIED":
+                            listener.addServer(service.type, options);
+                            break;
+                        case "DELETED":
+                            listener.removeServer(options);
+                            break;
+                        default:
+                            logger.info(String.format("Action: %s%n", service.type));
+                            break;
+                    }
+                }
+            } finally {
+                try {
+                    watch.close();
+                } catch (IOException e) {
+                    logger.info(e.getMessage());
+                }
+            }       
+            
+            logger.info("Stopped watching..");
+        }
     }
 }

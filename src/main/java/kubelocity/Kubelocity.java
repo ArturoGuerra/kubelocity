@@ -29,30 +29,25 @@ public class Kubelocity {
         this.proxyServer = proxyServer;
         this.logger = logger;
         this.config = new Config();
-    }
-
-    @Subscribe
-    public void onProxyInitialization(ProxyInitializeEvent event) {
-        removePreRegistered();
-        connectionManager();
         kubernetesListener();
         startWatcher();
     }
 
-    private void removePreRegistered() {
+    @Subscribe
+    public void onProxyInitialization(ProxyInitializeEvent event) {
         this.logger.info("Removing Pre-Registered servers");
         for (RegisteredServer s : this.proxyServer.getAllServers()) {
             this.proxyServer.unregisterServer(s.getServerInfo());
         }
-    }
 
-    private void connectionManager() {
         proxyServer.getEventManager().register(this, new ConnectionManager(this.config, this.proxyServer, this.logger));
     }
 
+
+
     private void kubernetesListener()  {
         try {
-           this.kubeListener = new KubernetesListener(this.config, this.proxyServer, this.logger);
+            this.kubeListener = new KubernetesListener(this.config, this.proxyServer, this.logger);
         } catch (IOException | ApiException e) {
             logger.info(String.format("Error while loading KubernetesListener: %s", e.getMessage()));
         }

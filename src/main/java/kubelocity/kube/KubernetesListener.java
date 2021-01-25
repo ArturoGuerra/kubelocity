@@ -76,6 +76,11 @@ public class KubernetesListener {
             Optional<String> externalHost = options.getExternalHost();
             if (externalHost.isPresent()) {
                 config.addForcedHost(externalHost.get(), options.getName());
+
+                // Marks the server as private which makes it so you can only connect with that hostname
+                if (options.isPrivateServer().booleanValue()) {
+                    config.addPrivateHost(options.getName());
+                }
             }
             
             logger.info(
@@ -98,6 +103,8 @@ public class KubernetesListener {
         if (registeredServer.isPresent()) {
             this.proxyServer.unregisterServer(registeredServer.get().getServerInfo());
         }
+
+        config.removePrivateHost(options.getName());
 
         String extHost = (externalHost.isPresent()) ? externalHost.get() : "";
 

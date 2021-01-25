@@ -8,6 +8,8 @@ import java.util.logging.Logger;
 
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
+import com.velocitypowered.api.event.player.ServerPreConnectEvent;
+import com.velocitypowered.api.event.player.ServerPreConnectEvent.ServerResult;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 
@@ -15,6 +17,7 @@ public class ConnectionManager {
     private Config config;
     private Logger logger;
     private ProxyServer proxyServer;
+    private final Boolean fake = false;
 
     public ConnectionManager(Config config, ProxyServer proxyServer, Logger logger) {
         this.config = config;
@@ -23,24 +26,46 @@ public class ConnectionManager {
     }
 
     @Subscribe
+    public void onServerPreConnectEvent(ServerPreConnectEvent event) {
+        RegisteredServer registeredServer = event.getOriginalServer();
+        String serverName = registeredServer.getServerInfo().getName();
+
+        if (this.config.isPrivateHost(serverName).booleanValue()) {
+            logger.info(String.format("Checking if %s is allowed in %s", event.getPlayer().getUsername(), serverName));
+            Optional<InetSocketAddress> virtualHost = event.getPlayer().getVirtualHost();
+            if (virtualHost.isPresent()) {
+                String hostName = virtualHost.get().getHostName();
+                Optional<String> forcedHost = this.config.getForcedHost(hostName);
+                Boolean notAllowed = (forcedHost.isPresent()) ? !forcedHost.get().equals(serverName) : fake;
+                if (notAllowed.booleanValue()) {
+                    event.setResult(ServerResult.denied());
+                }
+            }
+        }
+        
+        logger.info(event.getPlayer().toString());
+        logger.info(event.getResult().toString());
+    }
+
+    @Subscribe
     public void onPlayerChooseInitialServerEvent(PlayerChooseInitialServerEvent event) {
         Optional<RegisteredServer> registeredServer = event.getInitialServer();
-        if (registeredServer.isPresent()) {
-            logger.info(registeredServer.toString());
-        }
-
         Optional<InetSocketAddress> virtualHost = event.getPlayer().getVirtualHost();
-        final String hostName = (virtualHost.isPresent()) ? virtualHost.get().getHostName() : null;
-        final String forcedHost = (hostName != null) ? this.config.getForcedHost(hostName) : null;
 
-        if (hostName != null && forcedHost != null) {
-            logger.info(String.format("Forced Host: %s Server: %s", hostName, forcedHost));
-            registeredServer = this.proxyServer.getServer(forcedHost);
+        // Forced host checks
+        if (virtualHost.isPresent()) {
+            String hostName = virtualHost.get().getHostName();
+            Optional<String> forcedHost = this.config.getForcedHost(hostName);
+            if (forcedHost.isPresent()) {
+                logger.info(String.format("Forced Host: %s Server: %s", hostName, forcedHost.get()));
+                registeredServer = this.proxyServer.getServer(forcedHost.get());
+            }
         }
 
-        if (registeredServer.isEmpty()) {
+        if (registeredServer.isEmpty() ) {
             this.logger.info("Getting Default Server");
-            registeredServer = this.config.getDefaultServer() != null ? this.proxyServer.getServer(this.config.getDefaultServer()) : Optional.empty();
+            Optional<String> defaultServer = this.config.getDefaultServer();
+            registeredServer = (defaultServer.isPresent()) ? this.proxyServer.getServer(defaultServer.get()) : Optional.empty();
         }
 
         if (registeredServer.isPresent()) {

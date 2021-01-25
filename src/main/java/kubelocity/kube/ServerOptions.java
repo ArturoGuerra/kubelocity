@@ -12,13 +12,14 @@ import java.util.Map;
 public class ServerOptions {
     private final String name;
     private final Boolean enabled;
-    private final String proxyDNS;
+    private final InetSocketAddress proxyDNS;
     private final Boolean defaultServer;
-    private final InetSocketAddress address;
+    private final Boolean privateServer;
     private final Optional<String> externalHost;
 
     private final String baseAnnotation;
     private final String defaultServerAnnotation;
+    private final String privateServerAnnotation;
     private final String hostAnnotation;
     private final String enabledAnnotation;
     private final String annnotationFormat;
@@ -31,11 +32,12 @@ public class ServerOptions {
         baseAnnotation = "io.ar2ro.kubelocity";
         annnotationFormat = "%s/%s";
         defaultServerAnnotation = String.format(annnotationFormat, baseAnnotation, "defaultServer");
-        hostAnnotation = String.format(annnotationFormat, baseAnnotation, "host");
+        privateServerAnnotation = String.format(annnotationFormat, baseAnnotation, "private");
         enabledAnnotation = String.format(annnotationFormat, baseAnnotation, "enabled");
+        hostAnnotation = String.format(annnotationFormat, baseAnnotation, "host");
 
         name = service.getMetadata().getName();
-        proxyDNS = String.format("%s.%s", name, service.getMetadata().getNamespace());
+        String internalDNS = String.format("%s.%s", name, service.getMetadata().getNamespace());
         Integer port = 25565;
 
         for (V1ServicePort servicePort : service.getSpec().getPorts()) {
@@ -44,16 +46,18 @@ public class ServerOptions {
             }
         }
 
-        address = new InetSocketAddress(proxyDNS, port);
+        proxyDNS = new InetSocketAddress(internalDNS, port);
 
         Map<String, String> annotations = service.getMetadata().getAnnotations();
         if (annotations == null) {
             enabled = false;
             defaultServer = false;
+            privateServer = false;
             externalHost = Optional.empty();
         } else {
             enabled = (annotations.get(enabledAnnotation) == null) ? fake : annotations.get(enabledAnnotation).contentEquals("true");
             defaultServer = (annotations.get(defaultServerAnnotation) == null) ? fake : annotations.get(defaultServerAnnotation).contentEquals("true");
+            privateServer = (annotations.get(privateServerAnnotation) == null) ? fake : annotations.get(privateServerAnnotation).contentEquals("true");
             externalHost= (annotations.get(hostAnnotation) == null) ? Optional.empty() : Optional.of(annotations.get(hostAnnotation));
         }
     }
@@ -67,7 +71,7 @@ public class ServerOptions {
     }
 
     public InetSocketAddress getProxyDNS() {
-        return address;
+        return proxyDNS;
     }
 
     public Boolean getDefaultServer() {
@@ -79,6 +83,10 @@ public class ServerOptions {
     }
 
     public ServerInfo getServerInfo() {
-        return new ServerInfo(name, address);
+        return new ServerInfo(name, proxyDNS);
+    }
+
+    public Boolean isPrivateServer() {
+        return externalHost.isPresent() && privateServer;
     }
 }
