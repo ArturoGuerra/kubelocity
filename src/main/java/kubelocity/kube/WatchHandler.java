@@ -1,5 +1,6 @@
 package kubelocity.kube;
 
+import java.io.IOException;
 import java.util.logging.Logger;
 
 import io.kubernetes.client.openapi.models.V1Service;
@@ -18,29 +19,28 @@ public class WatchHandler implements Runnable {
     @Override
     public void run() {
         try {
-            watch.forEach(service -> {
+            for (Watch.Response<V1Service> service : watch) {
+                ServerOptions options = new ServerOptions(service.object);
                 switch(service.type) {
                     case "ADDED":
-                        listener.addServer(service.type, service.object);
-                        break;
                     case "MODIFIED":
-                        listener.addServer(service.type, service.object);
+                        listener.addServer(service.type, options);
                         break;
                     case "DELETED":
-                        listener.removeServer(service.object);
+                        listener.removeServer(options);
                         break;
                     default:
                         logger.info(String.format("Action: %s%n", service.type));
                         break;
                 }
-            });
-        } catch (Throwable e) {
-            logger.info(String.format("Error while watching: %s", e.getMessage()));
-            try {
-                Thread.sleep(1000*5);
-            } catch (InterruptedException error) {
-                logger.info(error.getMessage());
             }
-        }
+        } finally {
+            try {
+                watch.close();
+            } catch (IOException e) {
+                logger.info(e.getMessage());
+            }
+        }        
+
     }
 }
