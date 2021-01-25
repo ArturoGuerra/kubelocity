@@ -22,6 +22,7 @@ public class Kubelocity {
     private final ProxyServer proxyServer;
     private final Logger logger;
     private final Config config;
+    private KubernetesListener kubeListener;
 
     @Inject
     public Kubelocity(ProxyServer proxyServer, Logger logger) {
@@ -35,6 +36,7 @@ public class Kubelocity {
         removePreRegistered();
         connectionManager();
         kubernetesListener();
+        startWatcher();
     }
 
     private void removePreRegistered() {
@@ -50,9 +52,13 @@ public class Kubelocity {
 
     private void kubernetesListener()  {
         try {
-           new KubernetesListener(this.config, this.proxyServer, this.logger);
+           this.kubeListener = new KubernetesListener(this.config, this.proxyServer, this.logger);
         } catch (IOException | ApiException e) {
             logger.info(String.format("Error while loading KubernetesListener: %s", e.getMessage()));
         }
+    }
+
+    private void startWatcher() {
+        this.kubeListener.startWatcher();
     }
 }

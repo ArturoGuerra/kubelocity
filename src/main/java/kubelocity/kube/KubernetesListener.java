@@ -3,8 +3,6 @@ package kubelocity.kube;
 import java.util.logging.Logger;
 
 import java.io.IOException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import com.google.common.reflect.TypeToken;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -22,27 +20,29 @@ import io.kubernetes.client.util.Watch;
 import java.util.Optional;
 
 import okhttp3.OkHttpClient;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 
 
 public class KubernetesListener {
     private final String namespace;
-
-    private ProxyServer proxyServer;
-    private kubelocity.config.Config config;
-    private Logger logger;
-    private CoreV1Api api;
-    private ApiClient kclient;
-    private ExecutorService executorService = Executors.newSingleThreadExecutor();
-
-
+    private final ProxyServer proxyServer;
+    private final kubelocity.config.Config config;
+    private final Logger logger;
+    private final CoreV1Api api;
+    private final ApiClient kclient;
+    private final Watch<V1Service> watch;
+    private final ExecutorService executorService;
 
     public KubernetesListener(kubelocity.config.Config config, ProxyServer proxyServer, Logger logger) throws IOException, ApiException {
         this.proxyServer = proxyServer;
         this.config = config;
         this.logger = logger;
         this.namespace = config.getNamespace();
+        this.executorService = Executors.newSingleThreadExecutor();
  
         this.kclient = (System.getenv("KUBEFILE") != null) ? Config.fromConfig(System.getenv("KUBEFILE")) : Config.fromCluster();
         OkHttpClient httpClient = this.kclient.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
@@ -50,15 +50,13 @@ public class KubernetesListener {
         this.kclient.setVerifyingSsl(false);
         Configuration.setDefaultApiClient(this.kclient);
         this.api = new CoreV1Api();
-        Watch<V1Service> watch = Watch.createWatch(
+        this.watch = Watch.createWatch(
             this.kclient,
             this.api.listNamespacedServiceCall(this.namespace, "true", false, null, null, null, null, null, null, true, null),
             new TypeToken<Watch.Response<V1Service>>() {
                     private static final long serialVersionUID = 1L;
                 }.getType()
         );
-        executorService.execute(new WatchHandler(this, watch, logger));
-
     }
 
 
@@ -110,5 +108,9 @@ public class KubernetesListener {
             extHost,
             options.getDefaultServer()
         ));
+    }
+
+    public void startWatcher() {
+        executorService.execute(new WatchHandler(this, watch, logger));
     }
 }
