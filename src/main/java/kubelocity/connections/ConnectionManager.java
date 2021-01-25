@@ -42,9 +42,6 @@ public class ConnectionManager {
                 }
             }
         }
-        
-        logger.info(event.getPlayer().toString());
-        logger.info(event.getResult().toString());
     }
 
     @Subscribe
