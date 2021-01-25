@@ -1,10 +1,8 @@
 package kubelocity.config;
 
 import java.util.HashMap;
-import java.lang.System;
 
 public class Config {
-    private String motd;
     private String[] admins;
     private HashMap<String, String> forcedHosts;
     private String defaultServer;
@@ -14,14 +12,9 @@ public class Config {
     public Config() {
         this.forcedHosts = new HashMap<>();
         this.admins = (System.getenv("ADMINS") != null) ? System.getenv("ADMINS").split(",") : new String[]{};
-        this.motd = (System.getenv("MOTD") != null) ? System.getenv("MOTD") : "Velocity powered by Kubernetes";
         this.namespace = (System.getenv("KUBE_NAMESPACE") != null) ? System.getenv("KUBE_NAMESPACE") : "minecraft";
         this.defaultServer = null;
         this.admins = new String[]{};
-    }
-
-    public String getMotd() {
-        return this.motd;
     }
 
     public String[] getAdmins() {

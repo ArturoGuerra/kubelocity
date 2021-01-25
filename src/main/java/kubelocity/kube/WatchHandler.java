@@ -42,5 +42,6 @@ public class WatchHandler implements Runnable {
             }
         }        
 
+        logger.info("Exiting watch thread...");
     }
 }

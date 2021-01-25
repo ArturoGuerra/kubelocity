@@ -52,7 +52,7 @@ public class KubernetesListener {
         this.api = new CoreV1Api();
         Watch<V1Service> watch = Watch.createWatch(
             this.kclient,
-            this.api.listNamespacedServiceCall(this.namespace, "true", false, null, null, null, null, null, 10, true, null),
+            this.api.listNamespacedServiceCall(this.namespace, "true", false, null, null, null, null, null, null, true, null),
             new TypeToken<Watch.Response<V1Service>>() {
                     private static final long serialVersionUID = 1L;
                 }.getType()
