@@ -10,7 +10,6 @@ import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 
-import io.kubernetes.client.openapi.ApiException;
 import kubelocity.kube.KubernetesListener;
 import kubelocity.config.Config;
 import kubelocity.connections.ConnectionManager;
@@ -22,19 +21,17 @@ public class Kubelocity {
     private final ProxyServer proxyServer;
     private final Logger logger;
     private final Config config;
-    private KubernetesListener kubeListener;
 
     @Inject
     public Kubelocity(ProxyServer proxyServer, Logger logger) {
         this.proxyServer = proxyServer;
         this.logger = logger;
         this.config = new Config();
-        kubernetesListener();
-        startWatcher();
     }
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
+        kubernetesListener();
         this.logger.info("Removing Pre-Registered servers");
         for (RegisteredServer s : this.proxyServer.getAllServers()) {
             this.proxyServer.unregisterServer(s.getServerInfo());
@@ -47,13 +44,10 @@ public class Kubelocity {
 
     private void kubernetesListener()  {
         try {
-            this.kubeListener = new KubernetesListener(this.config, this.proxyServer, this.logger);
-        } catch (IOException | ApiException e) {
+            logger.info("Starting Kubernetes Watcher..");
+            proxyServer.getScheduler().buildTask(this, new KubernetesListener(this.config, this.proxyServer, this.logger)).schedule();
+        } catch (IOException e) {
             logger.info(String.format("Error while loading KubernetesListener: %s", e.getMessage()));
         }
-    }
-
-    private void startWatcher() {
-        this.kubeListener.startWatcher();
     }
 }

@@ -21,28 +21,21 @@ import java.util.Optional;
 
 import okhttp3.OkHttpClient;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-
-
-public class KubernetesListener {
+public class KubernetesListener implements Runnable {
     private final String namespace;
     private final ProxyServer proxyServer;
     private final kubelocity.config.Config config;
     private final Logger logger;
     private final CoreV1Api api;
     private final ApiClient kclient;
-    private final Watch<V1Service> watch;
-    private final ExecutorService executorService;
 
-    public KubernetesListener(kubelocity.config.Config config, ProxyServer proxyServer, Logger logger) throws IOException, ApiException {
+    public KubernetesListener(kubelocity.config.Config config, ProxyServer proxyServer, Logger logger) throws IOException {
         this.proxyServer = proxyServer;
         this.config = config;
         this.logger = logger;
         this.namespace = config.getNamespace();
-        this.executorService = Executors.newSingleThreadExecutor();
  
         this.kclient = (System.getenv("KUBEFILE") != null) ? Config.fromConfig(System.getenv("KUBEFILE")) : Config.fromCluster();
         OkHttpClient httpClient = this.kclient.getHttpClient().newBuilder().readTimeout(0, TimeUnit.SECONDS).build();
@@ -50,13 +43,44 @@ public class KubernetesListener {
         this.kclient.setVerifyingSsl(false);
         Configuration.setDefaultApiClient(this.kclient);
         this.api = new CoreV1Api();
-        this.watch = Watch.createWatch(
-            this.kclient,
-            this.api.listNamespacedServiceCall(this.namespace, "true", false, null, null, null, null, null, null, true, null),
-            new TypeToken<Watch.Response<V1Service>>() {
-                    private static final long serialVersionUID = 1L;
-                }.getType()
-        );
+    }
+
+    public void run() {
+        while (true) {
+            logger.info("Watching services..");
+            try {
+                Watch<V1Service> watch = Watch.createWatch(
+                    this.kclient,
+                    this.api.listNamespacedServiceCall(this.namespace, "true", false, null, null, null, null, null, null, true, null),
+                    new TypeToken<Watch.Response<V1Service>>() {
+                        private static final long serialVersionUID = 1L;
+                    }.getType()
+                );
+                try {
+                    for (Watch.Response<V1Service> service : watch) {
+                        ServerOptions options = new ServerOptions(service.object);
+                        switch(service.type) {
+                            case "ADDED":
+                            case "MODIFIED":
+                                addServer(service.type, options);
+                                break;
+                            case "DELETED":
+                                removeServer(options);
+                                break;
+                            default:
+                                logger.info(String.format("Action: %s%n", service.type));
+                                break;
+                        }
+                    }
+
+                } finally {
+                    watch.close();
+                }
+            } catch (ApiException | IOException e) {
+                logger.info(e.getMessage());
+            }
+        }  
+        
     }
 
 
@@ -115,9 +139,5 @@ public class KubernetesListener {
             extHost,
             options.getDefaultServer()
         ));
-    }
-
-    public void startWatcher() {
-        executorService.execute(new WatchHandler(this, watch, logger));
     }
 }
