@@ -11,6 +11,7 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 
 import kubelocity.kube.KubernetesListener;
+import kubelocity.servermanager.ServerManager;
 import kubelocity.config.Config;
 import kubelocity.connections.ConnectionManager;
 
@@ -19,6 +20,7 @@ import kubelocity.connections.ConnectionManager;
  authors= {"Ar2ro_"})
 public class Kubelocity {
     private final ProxyServer proxyServer;
+    private final ServerManager serverManager;
     private final Logger logger;
     private final Config config;
 
@@ -27,6 +29,7 @@ public class Kubelocity {
         this.proxyServer = proxyServer;
         this.logger = logger;
         this.config = new Config();
+        this.serverManager = new ServerManager();
     }
 
     @Subscribe
@@ -37,7 +40,7 @@ public class Kubelocity {
             this.proxyServer.unregisterServer(s.getServerInfo());
         }
 
-        proxyServer.getEventManager().register(this, new ConnectionManager(this.config, this.proxyServer, this.logger));
+        proxyServer.getEventManager().register(this, new ConnectionManager(this.serverManager, this.proxyServer, this.logger));
     }
 
 
@@ -45,7 +48,7 @@ public class Kubelocity {
     private void kubernetesListener()  {
         try {
             logger.info("Starting Kubernetes Watcher..");
-            proxyServer.getScheduler().buildTask(this, new KubernetesListener(this.config, this.proxyServer, this.logger)).schedule();
+            proxyServer.getScheduler().buildTask(this, new KubernetesListener(this.config, this.serverManager, this.proxyServer, this.logger)).schedule();
         } catch (IOException e) {
             logger.info(String.format("Error while loading KubernetesListener: %s", e.getMessage()));
         }

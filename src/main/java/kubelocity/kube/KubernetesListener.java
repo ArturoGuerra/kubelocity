@@ -23,18 +23,20 @@ import okhttp3.OkHttpClient;
 
 import java.util.concurrent.TimeUnit;
 
+import kubelocity.servermanager.ServerManager;
+
 public class KubernetesListener implements Runnable {
     private final String namespace;
     private final ProxyServer proxyServer;
-    private final kubelocity.config.Config config;
     private final Logger logger;
     private final CoreV1Api api;
     private final ApiClient kclient;
+    private final ServerManager serverManager;
 
-    public KubernetesListener(kubelocity.config.Config config, ProxyServer proxyServer, Logger logger) throws IOException {
+    public KubernetesListener(kubelocity.config.Config config, ServerManager serverManager, ProxyServer proxyServer, Logger logger) throws IOException {
         this.proxyServer = proxyServer;
-        this.config = config;
         this.logger = logger;
+        this.serverManager = serverManager;
         this.namespace = config.getNamespace();
  
         this.kclient = (System.getenv("KUBEFILE") != null) ? Config.fromConfig(System.getenv("KUBEFILE")) : Config.fromCluster();
@@ -94,16 +96,16 @@ public class KubernetesListener implements Runnable {
         if (options.isEnabled().booleanValue()) {
             this.safelyAddServer(options.getServerInfo());
             if (options.getDefaultServer().booleanValue()) {
-                config.setDefaultServer(options.getName());
+                serverManager.setDefaultServer(options.getName());
             }
 
             Optional<String> externalHost = options.getExternalHost();
             if (externalHost.isPresent()) {
-                config.addForcedHost(externalHost.get(), options.getName());
+                serverManager.addForcedHost(externalHost.get(), options.getName());
 
                 // Marks the server as private which makes it so you can only connect with that hostname
                 if (options.isPrivateServer().booleanValue()) {
-                    config.addPrivateHost(options.getName());
+                    serverManager.addPrivateHost(options.getName());
                 }
             }
             
@@ -120,7 +122,7 @@ public class KubernetesListener implements Runnable {
     public void removeServer(ServerOptions options) {
         Optional<String> externalHost = options.getExternalHost();
         if (externalHost.isPresent()) {
-            config.removeForcedHost(externalHost.get());
+            serverManager.removeForcedHost(externalHost.get());
         }
 
         Optional<RegisteredServer> registeredServer = this.proxyServer.getServer(options.getName());
@@ -128,7 +130,7 @@ public class KubernetesListener implements Runnable {
             this.proxyServer.unregisterServer(registeredServer.get().getServerInfo());
         }
 
-        config.removePrivateHost(options.getName());
+        serverManager.removePrivateHost(options.getName());
 
         String extHost = (externalHost.isPresent()) ? externalHost.get() : "";
 
