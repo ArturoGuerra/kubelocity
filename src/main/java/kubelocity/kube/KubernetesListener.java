@@ -102,11 +102,6 @@ public class KubernetesListener implements Runnable {
             Optional<String> externalHost = options.getExternalHost();
             if (externalHost.isPresent()) {
                 serverManager.addForcedHost(externalHost.get(), options.getName());
-
-                // Marks the server as private which makes it so you can only connect with that hostname
-                if (options.isPrivateServer().booleanValue()) {
-                    serverManager.addPrivateHost(options.getName());
-                }
             }
             
             logger.info(
@@ -130,10 +125,7 @@ public class KubernetesListener implements Runnable {
             this.proxyServer.unregisterServer(registeredServer.get().getServerInfo());
         }
 
-        serverManager.removePrivateHost(options.getName());
-
         String extHost = (externalHost.isPresent()) ? externalHost.get() : "";
-
 
         logger.info(String.format(
             "Event: DELETED Service: %s ExternalHost: %s Default: %b",

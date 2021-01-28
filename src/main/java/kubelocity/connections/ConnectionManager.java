@@ -1,6 +1,7 @@
 package kubelocity.connections;
 
 import kubelocity.servermanager.ServerManager;
+import net.kyori.adventure.text.Component;
 
 import java.net.InetSocketAddress;
 import java.util.Optional;
@@ -11,9 +12,10 @@ import java.util.logging.Logger;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyPingEvent;
 import com.velocitypowered.api.event.player.PlayerChooseInitialServerEvent;
-import com.velocitypowered.api.event.player.ServerPreConnectEvent;
-import com.velocitypowered.api.event.player.ServerPreConnectEvent.ServerResult;
+import com.velocitypowered.api.event.player.KickedFromServerEvent.DisconnectPlayer;
+import com.velocitypowered.api.event.player.KickedFromServerEvent;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import com.velocitypowered.api.proxy.server.ServerPing;
 
@@ -21,7 +23,6 @@ public class ConnectionManager {
     private ServerManager serverManager;
     private Logger logger;
     private ProxyServer proxyServer;
-    private final Boolean fake = false;
 
     public ConnectionManager(ServerManager serverManager, ProxyServer proxyServer, Logger logger) {
         this.serverManager = serverManager;
@@ -29,6 +30,9 @@ public class ConnectionManager {
         this.logger = logger;
     }
 
+    /*
+    Sets the current server info based on their forced host
+    */
     @Subscribe
     public void onProxyPingEvent(ProxyPingEvent event) {
         Optional<InetSocketAddress> con =  event.getConnection().getVirtualHost();
@@ -51,25 +55,23 @@ public class ConnectionManager {
         }
     }
 
+    /*
+    Ensures the player is fully kicked from the proxy if their first server kicked during initial connection
+    */
     @Subscribe
-    public void onServerPreConnectEvent(ServerPreConnectEvent event) {
-        RegisteredServer registeredServer = event.getOriginalServer();
-        String serverName = registeredServer.getServerInfo().getName();
-
-        if (this.serverManager.isPrivateHost(serverName).booleanValue()) {
-            logger.info(String.format("Checking if %s is allowed in %s", event.getPlayer().getUsername(), serverName));
-            Optional<InetSocketAddress> virtualHost = event.getPlayer().getVirtualHost();
-            if (virtualHost.isPresent()) {
-                String hostName = virtualHost.get().getHostName();
-                Optional<String> forcedHost = this.serverManager.getForcedHost(hostName);
-                Boolean notAllowed = (forcedHost.isPresent()) ? !forcedHost.get().equals(serverName) : fake;
-                if (notAllowed.booleanValue()) {
-                    event.setResult(ServerResult.denied());
-                }
-            }
+    public void onKickedFromServerEvent(KickedFromServerEvent event) {
+        Optional<ServerConnection> serverConnection = event.getPlayer().getCurrentServer();
+        if (serverConnection.isEmpty() && !event.kickedDuringServerConnect()) {
+            Optional<Component> optionalComponent = event.getServerKickReason();
+            Component text = (optionalComponent.isPresent()) ? optionalComponent.get() : Component.text("Unknown");
+            DisconnectPlayer dc = KickedFromServerEvent.DisconnectPlayer.create(text);
+            event.setResult(dc);
         }
     }
-
+    
+    /*
+    Ensures the player connects to the correct server based on forced hosts
+    */
     @Subscribe
     public void onPlayerChooseInitialServerEvent(PlayerChooseInitialServerEvent event) {
         Optional<RegisteredServer> registeredServer = event.getInitialServer();
