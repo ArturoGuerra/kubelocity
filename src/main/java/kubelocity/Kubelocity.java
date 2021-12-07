@@ -16,8 +16,8 @@ import kubelocity.config.Config;
 import kubelocity.connections.ConnectionManager;
 
 @Plugin(id="kubelocity", name="kubelocity",
- version="1.1.0", description = "Kubernetes service auto discovery",
- authors= {"Ar2ro_"})
+ version="1.2.0", description = "Kubernetes service auto discovery",
+ authors= {"Arturo Guerra"})
 public class Kubelocity {
     private final ProxyServer proxyServer;
     private final ServerManager serverManager;
@@ -34,13 +34,11 @@ public class Kubelocity {
 
     @Subscribe
     public void onProxyInitialization(ProxyInitializeEvent event) {
-        kubernetesListener();
         this.logger.info("Removing Pre-Registered servers");
-        for (RegisteredServer s : this.proxyServer.getAllServers()) {
-            this.proxyServer.unregisterServer(s.getServerInfo());
-        }
-
+        for (RegisteredServer s : this.proxyServer.getAllServers()) this.proxyServer.unregisterServer(s.getServerInfo());
+        this.logger.info("Registering Connection Manager");
         proxyServer.getEventManager().register(this, new ConnectionManager(this.serverManager, this.proxyServer, this.logger));
+        kubernetesListener();
     }
 
 
