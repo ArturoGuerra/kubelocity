@@ -105,9 +105,10 @@ public class KubernetesListener implements Runnable {
             }
             
             logger.info(
-                String.format("Event: %s Service: %s ExternalHost: %s Default: %b ProxyDNS: %s",
+                String.format("Event: %s Name: %s Service: %s ExternalHost: %s Default: %b ProxyDNS: %s",
                 event,
                 options.getName(),
+                options.getServiceName(),
                 externalHost,
                 options.getDefaultServer(),
                 options.getProxyDNS().getHostString()));

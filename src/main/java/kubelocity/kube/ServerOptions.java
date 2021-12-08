@@ -11,6 +11,7 @@ import java.util.Map;
 
 public class ServerOptions {
     private final String name;
+    private final String serviceName;
     private final Boolean enabled;
     private final InetSocketAddress proxyDNS;
     private final Boolean defaultServer;
@@ -22,6 +23,7 @@ public class ServerOptions {
     private final String privateServerAnnotation;
     private final String hostAnnotation;
     private final String enabledAnnotation;
+    private final String nameAnnotation;
     private final String annnotationFormat;
     
     // Java is dogshit
@@ -35,9 +37,10 @@ public class ServerOptions {
         privateServerAnnotation = String.format(annnotationFormat, baseAnnotation, "private");
         enabledAnnotation = String.format(annnotationFormat, baseAnnotation, "enabled");
         hostAnnotation = String.format(annnotationFormat, baseAnnotation, "host");
+        nameAnnotation = String.format(annnotationFormat, baseAnnotation, "name");
 
-        name = service.getMetadata().getName();
-        String internalDNS = String.format("%s.%s", name, service.getMetadata().getNamespace());
+        serviceName = service.getMetadata().getName();
+        String internalDNS = String.format("%s.%s", serviceName, service.getMetadata().getNamespace());
         Integer port = 25565;
 
         for (V1ServicePort servicePort : service.getSpec().getPorts()) {
@@ -54,16 +57,22 @@ public class ServerOptions {
             defaultServer = false;
             privateServer = false;
             externalHost = Optional.empty();
+            name = serviceName;
         } else {
             enabled = (annotations.get(enabledAnnotation) == null) ? fake : annotations.get(enabledAnnotation).contentEquals("true");
             defaultServer = (annotations.get(defaultServerAnnotation) == null) ? fake : annotations.get(defaultServerAnnotation).contentEquals("true");
             privateServer = (annotations.get(privateServerAnnotation) == null) ? fake : annotations.get(privateServerAnnotation).contentEquals("true");
             externalHost= (annotations.get(hostAnnotation) == null) ? Optional.empty() : Optional.of(annotations.get(hostAnnotation));
+            name = (annotations.get(nameAnnotation) == null) ? serviceName : annotations.get(nameAnnotation);
         }
     }
 
     public String getName() {
         return name;
+    }
+
+    public String getServiceName() {
+        return serviceName;
     }
 
     public Boolean isEnabled() {
